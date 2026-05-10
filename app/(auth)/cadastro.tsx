@@ -1,3 +1,9 @@
+import { AuthHeader } from "@/src/components/AuthHeader";
+import { Button } from "@/src/components/Button";
+import { Input } from "@/src/components/Input";
+import { colors, fontSize, radii, spacing } from "@/src/constants/theme";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   KeyboardAvoidingView,
@@ -6,14 +12,16 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  View,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import { Input } from "@/src/components/Input";
-import { Button } from "@/src/components/Button";
-import { AuthHeader } from "@/src/components/AuthHeader";
-import { colors, fontSize, spacing } from "@/src/constants/theme";
+
+type Erros = {
+  name?: string;
+  email?: string;
+  password?: string;
+  confirm?: string;
+};
 
 export default function CadastroScreen() {
   const router = useRouter();
@@ -21,25 +29,51 @@ export default function CadastroScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [error, setError] = useState<string | undefined>();
+  const [erros, setErros] = useState<Erros>({});
   const [loading, setLoading] = useState(false);
+  const [sucesso, setSucesso] = useState(false);
+
+  function validar(): boolean {
+    const novosErros: Erros = {};
+
+    if (!name.trim()) novosErros.name = "Preencha seu nome";
+
+    if (!email.trim()) novosErros.email = "Preencha este campo";
+    else if (!/^\S+@\S+\.\S+$/.test(email))
+      novosErros.email = "E-mail inválido";
+
+    if (!password) novosErros.password = "Preencha este campo";
+    else if (password.length < 6) novosErros.password = "Mínimo 6 caracteres";
+
+    if (!confirm) novosErros.confirm = "Confirme sua senha";
+    else if (confirm !== password)
+      novosErros.confirm = "As senhas não coincidem";
+
+    setErros(novosErros);
+    return Object.keys(novosErros).length === 0;
+  }
 
   function handleSubmit() {
-    if (password !== confirm) {
-      setError("As senhas não coincidem");
-      return;
-    }
-    setError(undefined);
+    if (!validar()) return;
+
     setLoading(true);
-    // Loading falso por 2s
     setTimeout(() => {
       setLoading(false);
-      router.replace("/(tabs)");
+      setSucesso(true);
+      setTimeout(() => router.replace("/(tabs)"), 2000);
     }, 2000);
   }
 
   return (
     <SafeAreaView style={styles.safe} edges={["bottom"]}>
+      {/* Toast de sucesso */}
+      {sucesso && (
+        <View style={styles.toast}>
+          <Ionicons name="checkmark-circle" size={20} color="#fff" />
+          <Text style={styles.toastText}>Conta criada com sucesso!</Text>
+        </View>
+      )}
+
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -61,7 +95,11 @@ export default function CadastroScreen() {
               icon="person-outline"
               placeholder="Seu nome completo"
               value={name}
-              onChangeText={setName}
+              onChangeText={(v) => {
+                setName(v);
+                if (erros.name) setErros((e) => ({ ...e, name: undefined }));
+              }}
+              error={erros.name}
             />
             <Input
               label="E-mail"
@@ -70,7 +108,11 @@ export default function CadastroScreen() {
               autoCapitalize="none"
               keyboardType="email-address"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(v) => {
+                setEmail(v);
+                if (erros.email) setErros((e) => ({ ...e, email: undefined }));
+              }}
+              error={erros.email}
             />
             <Input
               label="Senha"
@@ -80,8 +122,10 @@ export default function CadastroScreen() {
               value={password}
               onChangeText={(v) => {
                 setPassword(v);
-                if (error) setError(undefined);
+                if (erros.password)
+                  setErros((e) => ({ ...e, password: undefined }));
               }}
+              error={erros.password}
             />
             <Input
               label="Confirmar senha"
@@ -91,9 +135,10 @@ export default function CadastroScreen() {
               value={confirm}
               onChangeText={(v) => {
                 setConfirm(v);
-                if (error) setError(undefined);
+                if (erros.confirm)
+                  setErros((e) => ({ ...e, confirm: undefined }));
               }}
-              error={error}
+              error={erros.confirm}
             />
 
             <View style={{ height: spacing.md }} />
@@ -124,6 +169,25 @@ const styles = StyleSheet.create({
   back: {
     textAlign: "center",
     color: colors.primary,
+    fontSize: fontSize.base,
+    fontWeight: "600",
+  },
+  toast: {
+    position: "absolute",
+    top: 60,
+    left: spacing["2xl"],
+    right: spacing["2xl"],
+    zIndex: 99,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    backgroundColor: colors.success,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radii.lg,
+  },
+  toastText: {
+    color: "#fff",
     fontSize: fontSize.base,
     fontWeight: "600",
   },

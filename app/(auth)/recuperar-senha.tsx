@@ -1,3 +1,9 @@
+import { AuthHeader } from "@/src/components/AuthHeader";
+import { Button } from "@/src/components/Button";
+import { Input } from "@/src/components/Input";
+import { colors, fontSize, spacing } from "@/src/constants/theme";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   KeyboardAvoidingView,
@@ -8,20 +14,25 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { Input } from "@/src/components/Input";
-import { Button } from "@/src/components/Button";
-import { AuthHeader } from "@/src/components/AuthHeader";
-import { colors, fontSize, radii, spacing } from "@/src/constants/theme";
 
 export default function RecuperarSenhaScreen() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [emailErro, setEmailErro] = useState<string | undefined>();
 
   function handleSend() {
+    if (!email.trim()) {
+      setEmailErro("Preencha este campo");
+      return;
+    }
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      setEmailErro("E-mail inválido");
+      return;
+    }
+
+    setEmailErro(undefined);
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
@@ -80,7 +91,11 @@ export default function RecuperarSenhaScreen() {
                   autoCapitalize="none"
                   keyboardType="email-address"
                   value={email}
-                  onChangeText={setEmail}
+                  onChangeText={(v) => {
+                    setEmail(v);
+                    if (emailErro) setEmailErro(undefined);
+                  }}
+                  error={emailErro}
                 />
 
                 <View style={{ height: spacing.sm }} />
@@ -116,17 +131,24 @@ const styles = StyleSheet.create({
   desc: { fontSize: fontSize.base, color: colors.muted, lineHeight: 22 },
   successBox: { alignItems: "center", paddingTop: spacing.lg },
   successIcon: {
-    width: 72, height: 72, borderRadius: 36,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     backgroundColor: colors.success,
-    alignItems: "center", justifyContent: "center",
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: spacing.lg,
   },
   successTitle: {
-    fontSize: fontSize.xl, fontWeight: "700",
-    color: colors.foreground, marginBottom: spacing.sm,
+    fontSize: fontSize.xl,
+    fontWeight: "700",
+    color: colors.foreground,
+    marginBottom: spacing.sm,
   },
   successText: {
-    fontSize: fontSize.base, color: colors.muted,
-    textAlign: "center", lineHeight: 22,
+    fontSize: fontSize.base,
+    color: colors.muted,
+    textAlign: "center",
+    lineHeight: 22,
   },
 });

@@ -10,7 +10,12 @@ export const colors = {
   border: "#E2E8F0",
   inputBg: "#F1F5F9",
   destructive: "#DC2626",
+  destructiveLight: "#FEE2E2",
+  warning: "#D97706",
+  warningLight: "#FEF3C7",
   success: "#16A34A",
+  successLight: "#DCFCE7",
+  infoLight: "#DBEAFE",
   white: "#FFFFFF",
 };
 
