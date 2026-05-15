@@ -2,10 +2,11 @@ import { AuthHeader } from "@/src/components/AuthHeader";
 import { Button } from "@/src/components/Button";
 import { Input } from "@/src/components/Input";
 import { colors, fontSize, spacing } from "@/src/constants/theme";
-import { useAuth } from "@/src/hooks/useAuth";
-import { Link, useRouter } from "expo-router";
+import { useAuth } from "@/src/contexts/AuthContext";
+import { Link, router } from "expo-router";
 import React, { useState } from "react";
 import {
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -17,25 +18,29 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function LoginScreen() {
-  const router = useRouter();
-  const { login, loading } = useAuth();
+  const { login, isLoading } = useAuth();
+
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [erros, setErros] = useState<{ email?: string; password?: string }>({});
+  const [senha, setSenha] = useState("");
 
-  async function handleLogin() {
-    const novosErros: { email?: string; password?: string } = {};
-    if (!email.trim()) novosErros.email = "Preencha este campo";
-    else if (!/^\S+@\S+\.\S+$/.test(email))
-      novosErros.email = "E-mail inválido";
-    if (!password) novosErros.password = "Preencha este campo";
+  const handleLogin = async () => {
+    if (!email.trim() || !senha.trim()) {
+      Alert.alert("Atenção", "Preencha e-mail e senha.");
+      console.log("BOTÃO LOGIN");
+      return;
+    }
 
-    setErros(novosErros);
-    if (Object.keys(novosErros).length > 0) return;
-
-    const res = await login(email, password);
-    if (res.ok) router.replace("/(tabs)");
-  }
+    try {
+      await login(email, senha); // ← chama o login do contexto
+      // O NavigationGuard detecta isAuthenticated = true e redireciona
+      // automaticamente para /(tabs) — NÃO precisa de router.replace aqui!
+      console.log("LOGIN EXECUTADO");
+      router.replace("/(tabs)");
+    } catch (error) {
+      Alert.alert("Erro", "E-mail ou senha inválidos.");
+      console.log("ERRO LOGIN", error);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safe} edges={["bottom"]}>
@@ -55,6 +60,7 @@ export default function LoginScreen() {
 
           <View style={styles.body}>
             <Text style={styles.welcome}>Bem-vindo de volta 👋</Text>
+
             <Text style={styles.helper}>
               Entre com sua conta para continuar
             </Text>
@@ -63,29 +69,24 @@ export default function LoginScreen() {
 
             <Input
               label="E-mail"
-              icon="mail-outline"
+              icon="mail-outline" // ← seu componente usa icon
               placeholder="seu@email.com"
-              autoCapitalize="none"
-              keyboardType="email-address"
               value={email}
-              onChangeText={(text) => {
-                setEmail(text);
-                if (erros.email) setErros((e) => ({ ...e, email: undefined }));
-              }}
-              error={erros.email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              returnKeyType="next"
             />
+
             <Input
               label="Senha"
               icon="lock-closed-outline"
               placeholder="••••••••"
+              value={senha}
+              onChangeText={setSenha}
               isPassword
-              value={password}
-              onChangeText={(text) => {
-                setPassword(text);
-                if (erros.password)
-                  setErros((e) => ({ ...e, password: undefined }));
-              }}
-              error={erros.password}
+              returnKeyType="done"
+              onSubmitEditing={handleLogin}
             />
 
             <Pressable onPress={() => router.push("/(auth)/recuperar-senha")}>
@@ -96,13 +97,14 @@ export default function LoginScreen() {
 
             <Button
               title="Entrar"
-              fullWidth
-              loading={loading}
+              loading={isLoading}
               onPress={handleLogin}
+              fullWidth
             />
 
             <View style={styles.footer}>
-              <Text style={styles.footerText}>Não tem conta? </Text>
+              <Text style={styles.footerText}>Não tem conta?</Text>
+
               <Link href="/(auth)/cadastro" asChild>
                 <Pressable>
                   <Text style={styles.footerLink}>Criar conta</Text>
@@ -117,19 +119,31 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
-  scroll: { flexGrow: 1 },
-  body: { padding: spacing["2xl"] },
+  safe: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+
+  scroll: {
+    flexGrow: 1,
+  },
+
+  body: {
+    padding: spacing["2xl"],
+  },
+
   welcome: {
     fontSize: fontSize["2xl"],
     fontWeight: "700",
     color: colors.foreground,
   },
+
   helper: {
     marginTop: spacing.xs,
     fontSize: fontSize.base,
     color: colors.muted,
   },
+
   forgot: {
     marginTop: spacing.sm,
     alignSelf: "flex-end",
@@ -137,12 +151,18 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     fontWeight: "600",
   },
+
   footer: {
     marginTop: spacing.xl,
     flexDirection: "row",
     justifyContent: "center",
   },
-  footerText: { color: colors.muted, fontSize: fontSize.base },
+
+  footerText: {
+    color: colors.muted,
+    fontSize: fontSize.base,
+  },
+
   footerLink: {
     color: colors.primary,
     fontSize: fontSize.base,

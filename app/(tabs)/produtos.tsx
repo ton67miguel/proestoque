@@ -1,4 +1,5 @@
 import { colors, fontSize, radii, spacing } from "@/src/constants/theme";
+import { useAuth } from "@/src/contexts/AuthContext";
 import {
   CATEGORIAS_MOCK,
   formatCurrency,
@@ -50,8 +51,26 @@ export default function ProdutosScreen() {
   const [busca, setBusca] = useState("");
   const [categoriaAtiva, setCategoriaAtiva] = useState("Todas");
   const [viewMode, setViewMode] = useState<ViewMode>("lista");
+
+  const { logout } = useAuth();
   const router = useRouter();
-  const handleLogout = () => router.replace("/(auth)/login");
+
+  const handleLogout = () => {
+    Alert.alert("Sair da conta", "Tem certeza que deseja sair?", [
+      {
+        text: "Cancelar",
+        style: "cancel",
+      },
+      {
+        text: "Sair",
+        style: "destructive",
+        onPress: async () => {
+          await logout();
+          router.replace("/(auth)/login");
+        },
+      },
+    ]);
+  };
 
   const produtosFiltrados = useMemo(() => {
     const termo = busca.trim().toLowerCase();

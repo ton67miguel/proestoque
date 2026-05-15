@@ -5,6 +5,7 @@ import {
   shadow,
   spacing,
 } from "@/src/constants/theme";
+import { useAuth } from "@/src/contexts/AuthContext";
 import {
   formatCurrency,
   getResumoDashboard,
@@ -51,6 +52,7 @@ const statusConfig: Record<
 
 export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
+  const { user, logout } = useAuth();
 
   const resumo = useMemo(() => getResumoDashboard(), []);
   const produtosRecentes = useMemo(() => PRODUTOS_MOCK.slice(0, 6), []);
@@ -59,9 +61,30 @@ export default function HomeScreen() {
       PRODUTOS_MOCK.filter((produto) => getStatusEstoque(produto) !== "normal"),
     [],
   );
-  const router = useRouter();
-  const handleLogout = () => router.replace("/(auth)/login");
 
+  const router = useRouter();
+
+  const handleLogout = () => {
+    Alert.alert("Sair da conta", "Tem certeza que deseja sair?", [
+      {
+        text: "Cancelar",
+        style: "cancel",
+      },
+      {
+        text: "Sair",
+        style: "destructive",
+        onPress: async () => {
+          await logout();
+          router.replace("/(auth)/login");
+        },
+      },
+    ]);
+  };
+
+  const hora = new Date().getHours();
+
+  const saudacao =
+    hora < 12 ? "Bom dia" : hora < 18 ? "Boa tarde" : "Boa noite";
   const hoje = useMemo(
     () =>
       new Date().toLocaleDateString("pt-BR", {
@@ -103,8 +126,11 @@ export default function HomeScreen() {
           <View style={styles.headerWrapper}>
             <View style={styles.header}>
               <View>
-                <Text style={styles.greeting}>Olá, Usuário 👋</Text>
-                <Text style={styles.date}>{hoje}</Text>
+                <Text style={styles.greeting}>
+                  {" "}
+                  {saudacao}, {user?.nome?.split(" ")[0] ?? "Usuário"} 👋
+                </Text>
+                <Text style={styles.date}> {hoje}</Text>
               </View>
               <View style={styles.headerRight}>
                 <Pressable onPress={handleAddItem} style={styles.addButton}>
