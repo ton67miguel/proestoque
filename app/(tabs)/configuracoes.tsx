@@ -108,8 +108,8 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   avatar: {
-    width: 56,
-    height: 56,
+    width: 55,
+    height: 55,
     borderRadius: 28,
     backgroundColor: colors.primary,
     alignItems: "center",
